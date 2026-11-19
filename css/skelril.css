@@ -211,4 +211,15 @@ body { background: var(--parchment); font-size: 17px; line-height: 1.55; }
   margin: 0; padding: 12px 22px 10px; border: 6px solid; border-color: #6b6b6b #1a1a1a #1a1a1a #6b6b6b;
   font-size: clamp(28px, 7vw, 52px); line-height: 1.1;
 }
-svg.landscape { display: block; width: 100%; height: 100%; }
+/* ---- the landscape: a WebGPU sky (when available) behind the SVG scene ---- */
+.landscape { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.landscape > canvas, .landscape > svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.landscape-sky { visibility: hidden; }
+.landscape-live .landscape-sky { visibility: visible; }
+.landscape-live .landscape-static-sky { display: none; }
+.landscape-night { display: none; }
+.dark .landscape-night { display: inline; }
+.dark .landscape-day { display: none; }
+.dark .landscape-cloud rect { fill: #5c6a90; }
+.dark .landscape-cloud-far rect { fill: #3e4a73; }
+.dark .landscape-ground { filter: var(--landscape-moonlight); }

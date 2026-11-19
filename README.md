@@ -8,6 +8,10 @@ Skelril's pixel-art VitePress theme, shared by Skelril's documentation sites, su
   rewrites, sidebar, category cards) and the markdown plugins (command chips, chapter banners, callout icons).
 - `css/`, `fonts/`: styles and the bundled OFL fonts.
 
+`<Landscape />` is the pixel-art hero scene. Its sky is a WebGPU scene (`src/sky.ts`): a gradient with drifting block
+clouds by day, and the moon and twinkling block stars in dark mode (VitePress' `html.dark`), drawn behind the SVG
+foreground. Without WebGPU, or with a GPU error, the static SVG sky stays; `prefers-reduced-motion` stops the movement.
+
 `src/` ships as TypeScript for Vite to compile. Node will not strip types under `node_modules`, so `node/` is bundled
 to `dist/node.js` by the `prepare` script, which npm runs when it installs the git dependency. Sites need Node >= 22.18
 and `vitepress` / `vue` as their own dependencies (peers).

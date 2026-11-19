@@ -1,0 +1,214 @@
+/* Skelril theme: a pixel-art look over VitePress' default theme. Fonts are OFL (see fonts/). */
+
+@font-face { font-family: "Silkscreen"; src: url("../fonts/Silkscreen-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Silkscreen"; src: url("../fonts/Silkscreen-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "VT323"; src: url("../fonts/VT323-Regular.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("../fonts/Nunito-Variable.ttf") format("truetype"); font-weight: 200 1000; font-style: normal; font-display: swap; }
+@font-face { font-family: "Nunito"; src: url("../fonts/Nunito-Italic-Variable.ttf") format("truetype"); font-weight: 200 1000; font-style: italic; font-display: swap; }
+
+:root {
+  --grass: #5b8731;
+  --grass-dark: #3f6b22;
+  --grass-light: #8bbd5a;
+  --dirt: #866043;
+  --dirt-dark: #5e4129;
+  --dirt-light: #c9a07a;
+  --stone: #7f7f7f;
+  --stone-light: #b9b9b9;
+  --deepslate: #2b2b2b;
+  --sky: #8ecbff;
+  --gold: #f6c84c;
+  --red: #c0392b;
+  --parchment: #f7f0dc;
+  --ink: #2b2118;
+  --card: #fffaf0;
+  --card-alt: #f1e9d1;
+  --code-bg: #e9e0c4;
+  --code-ink: #3a2a12;
+  --bevel-light: #6b6b6b;
+  --bevel-dark: #151515;
+  --heading: var(--grass-dark);
+  --subheading: var(--dirt-dark);
+
+  --vp-font-family-base: "Nunito", "Noto Sans", system-ui, sans-serif;
+  --vp-font-family-mono: "VT323", ui-monospace, monospace;
+  --skelril-heading-font: "Silkscreen", monospace;
+
+  --vp-c-bg: var(--parchment);
+  --vp-c-bg-alt: var(--card-alt);
+  --vp-c-bg-elv: var(--card);
+  --vp-c-bg-soft: var(--card-alt);
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: #5a4a3a;
+  --vp-c-text-3: #7a6a5a;
+  --vp-c-divider: var(--stone-light);
+  --vp-c-border: var(--stone-light);
+  --vp-c-gutter: var(--stone-light);
+
+  --vp-c-brand-1: #4f7a2a;
+  --vp-c-brand-2: #57862e;
+  --vp-c-brand-3: #476e26;
+  --vp-c-brand-soft: rgba(91, 135, 49, 0.16);
+
+  --vp-code-bg: var(--code-bg);
+  --vp-code-color: var(--code-ink);
+  --vp-code-font-size: 1.2em;
+  --vp-code-block-bg: var(--deepslate);
+  --vp-code-block-color: #e8e8e8;
+
+  --vp-sidebar-bg-color: var(--card-alt);
+  --vp-nav-bg-color: var(--deepslate);
+  --vp-nav-screen-bg-color: var(--deepslate);
+  --vp-local-nav-bg-color: var(--parchment);
+
+  --vp-custom-block-tip-bg: var(--card);
+  --vp-custom-block-info-bg: var(--card);
+  --vp-custom-block-warning-bg: var(--card);
+  --vp-custom-block-danger-bg: var(--card);
+  --vp-custom-block-tip-text: var(--ink);
+  --vp-custom-block-info-text: var(--ink);
+  --vp-custom-block-warning-text: var(--ink);
+  --vp-custom-block-danger-text: var(--ink);
+}
+
+.dark {
+  --parchment: #1d1a16;
+  --ink: #efe6d2;
+  --card: #2a251e;
+  --card-alt: #332d24;
+  --stone-light: #4a443a;
+  --code-bg: #3a3226;
+  --code-ink: #f3e4c0;
+  --heading: #8bbd5a;
+  --subheading: #c9a07a;
+
+  --vp-c-text-2: #cfc4ad;
+  --vp-c-text-3: #a89d88;
+  --vp-c-brand-1: #8bbd5a;
+  --vp-c-brand-2: #99c56c;
+  --vp-c-brand-3: #7db14a;
+  --vp-c-brand-soft: rgba(139, 189, 90, 0.16);
+  --vp-code-block-bg: #141210;
+}
+
+body { background: var(--parchment); font-size: 17px; line-height: 1.55; }
+
+/* ---- navbar: deepslate with a grass edge; its links are light ---- */
+.VPNav {
+  --vp-c-text-1: #e8e8e8;
+  --vp-c-text-2: #e8e8e8;
+  --vp-c-brand-1: var(--gold);
+  --vp-c-divider: #444;
+  --vp-c-gutter: #444;
+  --vp-c-bg: var(--deepslate);
+  --vp-c-bg-alt: var(--deepslate);
+  --vp-c-bg-elv: #333;
+  --vp-c-default-soft: #444;
+}
+.VPNavBar, .VPNavBar .content-body, .VPNavBar .title, .VPNavBar.has-sidebar .title { background: var(--deepslate) !important; }
+/* The bar's children cover its own border, so the grass edge is a shadow under the whole nav. */
+.VPNav { box-shadow: 0 4px 0 var(--grass); }
+.VPNavBar .divider { display: none; }
+.VPNavBarTitle .title { font-family: var(--skelril-heading-font); font-weight: 700; letter-spacing: 1px; color: #fff; border-bottom: none; }
+.VPNavBarMenuLink, .VPNavScreenMenuLink { font-family: var(--skelril-heading-font); font-size: 13px; }
+.VPNavScreen { background: var(--deepslate); }
+
+/* ---- footer ---- */
+.VPFooter.VPFooter { background: var(--deepslate); border-top: 4px solid var(--grass); }
+.VPFooter.VPFooter .copyright, .VPFooter.VPFooter .message { color: #e8e8e8; font-family: "VT323", monospace; font-size: 19px; }
+.doc-footer-note { margin: 40px 0 0; color: var(--vp-c-text-3); font-family: "VT323", monospace; font-size: 19px; text-align: center; }
+
+/* ---- sidebar and outline ---- */
+.VPSidebar { border-right: 3px solid var(--stone-light); }
+.VPSidebarItem.level-0 > .item .text { font-family: var(--skelril-heading-font); font-size: 12.5px; font-weight: 400; }
+.VPSidebarItem.is-active > .item .link > .text { font-weight: 800; }
+.VPSidebarItem.level-0.is-active > .item, .VPSidebarItem.level-1.is-active > .item { border-left: 4px solid var(--grass); padding-left: 8px; }
+.VPDocAsideOutline .outline-title { font-family: var(--skelril-heading-font); font-size: 12px; }
+
+/* ---- headings ---- */
+.vp-doc h1, .vp-doc h2, .vp-doc h3, .vp-doc h4 { font-family: var(--skelril-heading-font); font-weight: 700; letter-spacing: 0; }
+
+/* the chapter title: the dirt banner with a grass top */
+.vp-doc h1.chapter-title, .vp-doc h1:first-child {
+  font-size: clamp(22px, 4.5vw, 32px); line-height: 1.15; color: #fff; background: var(--dirt);
+  margin: 0 0 24px; padding: 14px 16px 12px;
+  border-top: 10px solid var(--grass); border-bottom: 5px solid var(--dirt-dark);
+  display: flex; align-items: center; gap: 14px;
+}
+.vp-doc h1 .pixel-icon { flex: none; }
+.vp-doc h1 .header-anchor { color: #fff; }
+
+.vp-doc h2 {
+  font-size: 18px; color: var(--heading); margin-top: 34px; padding-top: 0; padding-bottom: 5px;
+  border-top: none; border-bottom: 3px solid var(--stone-light);
+}
+.vp-doc h3 { font-size: 14.5px; color: var(--subheading); }
+.vp-doc strong { font-weight: 800; }
+.vp-doc a { text-decoration-thickness: 2px; }
+.vp-doc hr { border-top: 3px solid var(--stone-light); }
+
+/* ---- code and command chips ---- */
+.vp-doc :not(pre) > code { background: var(--code-bg); color: var(--code-ink); border-radius: 0; padding: 0 4px; }
+.vp-doc :not(pre) > code.cmd {
+  background: var(--deepslate); color: #e8e8e8; padding: 0 6px;
+  border: 2px solid; border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+}
+.vp-doc div[class*="language-"] {
+  border-radius: 0 !important;
+  border: 3px solid; border-color: var(--bevel-light) var(--bevel-dark) var(--bevel-dark) var(--bevel-light);
+}
+.vp-doc div[class*="language-"] code { font-size: 19px; line-height: 1.25; }
+
+/* ---- tables ---- */
+.vp-doc table { display: table; width: 100%; border-collapse: collapse; font-size: 15.5px; }
+@media (max-width: 700px) { .vp-doc table { display: block; overflow-x: auto; } }
+.vp-doc tr { border: none; background: var(--card); }
+.vp-doc tr:nth-child(2n) { background: var(--card-alt); }
+.vp-doc th {
+  font-family: var(--skelril-heading-font); font-size: 11.5px; text-align: left; color: #fff; background: var(--stone);
+  border: 2px solid var(--deepslate);
+}
+.dark .vp-doc th { background: #5a5a5a; }
+.vp-doc td { vertical-align: top; border: 2px solid var(--stone-light); }
+.vp-doc td code { font-size: 1.15em; }
+
+/* ---- callouts: bevelled borders, pixel icons ---- */
+.vp-doc .custom-block { border-radius: 0; border: 4px solid; padding: 12px 16px 6px; }
+.vp-doc .custom-block .custom-block-title {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--skelril-heading-font); font-size: 13px; text-transform: uppercase;
+}
+.vp-doc .custom-block .admonition-icon { flex: none; }
+.vp-doc .custom-block.tip { border-color: #8bbd5a #3f6b22 #3f6b22 #8bbd5a; }
+.vp-doc .custom-block.tip .custom-block-title { color: var(--heading); }
+.vp-doc .custom-block.info { border-color: #c9a07a #5e4129 #5e4129 #c9a07a; }
+.vp-doc .custom-block.info .custom-block-title { color: var(--subheading); }
+.vp-doc .custom-block.warning, .vp-doc .custom-block.danger { border-color: #e07a6e #8b2418 #8b2418 #e07a6e; }
+.vp-doc .custom-block.warning .custom-block-title, .vp-doc .custom-block.danger .custom-block-title { color: var(--red); }
+.dark .vp-doc .custom-block.warning .custom-block-title, .dark .vp-doc .custom-block.danger .custom-block-title { color: #e07a6e; }
+.vp-doc .custom-block a { color: var(--vp-c-brand-1); }
+.vp-doc .custom-block code { background: var(--code-bg); }
+
+/* ---- pager ---- */
+.VPDocFooter .pager-link { border-radius: 0; border: 3px solid var(--stone-light); background: var(--card); }
+.VPDocFooter .pager-link:hover { border-color: var(--grass); }
+.VPDocFooter .desc { font-family: var(--skelril-heading-font); font-size: 11px; }
+.VPDocFooter .edit-link-button { font-family: var(--skelril-heading-font); font-size: 12px; }
+
+/* ---- category pages ---- */
+.category-index { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 16px; margin-top: 24px; }
+.vp-doc a.category-card {
+  display: block; padding: 12px 14px; background: var(--card); color: var(--ink); text-decoration: none;
+  border: 4px solid; border-color: #c9a07a #5e4129 #5e4129 #c9a07a;
+}
+.vp-doc a.category-card:hover { border-color: #8bbd5a #3f6b22 #3f6b22 #8bbd5a; }
+.category-card strong { display: block; font-family: var(--skelril-heading-font); font-size: 13.5px; color: var(--heading); margin-bottom: 6px; }
+.category-card span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; font-size: 15px; }
+
+/* ---- the bevelled "Skelril" title used by hero sections ---- */
+.skelril-bevel {
+  display: inline-block; font-family: var(--skelril-heading-font); font-weight: 700; color: #fff; background: var(--deepslate);
+  margin: 0; padding: 12px 22px 10px; border: 6px solid; border-color: #6b6b6b #1a1a1a #1a1a1a #6b6b6b;
+  font-size: clamp(28px, 7vw, 52px); line-height: 1.1;
+}
+svg.landscape { display: block; width: 100%; height: 100%; }

@@ -1,0 +1,40 @@
+{
+  "name": "vitepress-theme-skelril",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Skelril's pixel-art VitePress theme, shared by Skelril's documentation sites. The client theme (src/) ships as TypeScript for Vite to compile; the config helpers (node/) are bundled to dist/node.js on install, since Node will not strip types under node_modules.",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/packet-loss-gaming/skelril-docs-theme.git"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": {
+      "types": "./node/index.ts",
+      "default": "./dist/node.js"
+    }
+  },
+  "files": [
+    "css",
+    "dist",
+    "fonts",
+    "node",
+    "src"
+  ],
+  "scripts": {
+    "build": "esbuild node/index.ts --bundle --platform=node --format=esm --target=node22 --packages=external --outfile=dist/node.js",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "vitepress": "1.6.4",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.21.5"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

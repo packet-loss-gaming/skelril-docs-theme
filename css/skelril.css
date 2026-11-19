@@ -214,9 +214,11 @@ body { background: var(--parchment); font-size: 17px; line-height: 1.55; }
 /* ---- the landscape: a WebGPU sky (when available) behind the SVG scene ---- */
 .landscape { position: relative; width: 100%; height: 100%; overflow: hidden; }
 .landscape > canvas, .landscape > svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-.landscape-sky { visibility: hidden; }
-.landscape-live .landscape-sky { visibility: visible; }
-.landscape-live .landscape-static-sky { display: none; }
+/* The SVG sky only without WebGPU (no html.skelril-webgpu from skelrilHead) or after it failed (.landscape-static). */
+.landscape-sky { visibility: hidden; background: linear-gradient(#4f9de6, #bfe4ff); }
+.dark .landscape-sky { background: linear-gradient(#070b24, #26346a); }
+.landscape-live .landscape-sky, .skelril-webgpu .landscape:not(.landscape-static) .landscape-sky { visibility: visible; }
+.landscape-live .landscape-static-sky, .skelril-webgpu .landscape:not(.landscape-static) .landscape-static-sky { display: none; }
 .landscape-night { display: none; }
 .dark .landscape-night { display: inline; }
 .dark .landscape-day { display: none; }

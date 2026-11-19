@@ -2,7 +2,7 @@
 // markdown plugins (command chips, chapter banners, callout icons).
 import fs from 'node:fs'
 import path from 'node:path'
-import type { DefaultTheme, MarkdownRenderer } from 'vitepress'
+import type { DefaultTheme, HeadConfig, MarkdownRenderer } from 'vitepress'
 import { iconSvg } from '../src/pixel.ts'
 
 export { ICON_NAMES } from '../src/pixel.ts'
@@ -184,3 +184,9 @@ export function skelrilMarkdown(md: MarkdownRenderer): void {
   chapterBanner(md)
   admonitionIcons(md)
 }
+
+// Add to the site config's `head`: marks WebGPU-capable browsers before the page renders (html.skelril-webgpu), so the
+// landscape starts with its WebGPU sky instead of flashing the static SVG one.
+export const skelrilHead: HeadConfig[] = [
+  ['script', { id: 'skelril-webgpu' }, "'gpu' in navigator && document.documentElement.classList.add('skelril-webgpu')"],
+]

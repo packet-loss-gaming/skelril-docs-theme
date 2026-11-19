@@ -9,23 +9,33 @@ const clouds = computed(() => scene.value.clouds.filter((c) => c.x < scene.value
 // Dark mode (VitePress' html.dark) shows the night layers and dims the foreground with this filter (see skelril.css).
 const moonlight = `skelril-moonlight-${useId()}`
 
-// The page is rendered with the static SVG sky; when WebGPU is available, the canvas behind the SVG takes over the sky
-// (gradient, drifting clouds, twinkling stars) and the SVG keeps only the foreground. Reduced motion stops the movement.
+// With WebGPU, the canvas behind the SVG draws the sky (gradient, drifting clouds, twinkling stars) and the SVG keeps
+// only the foreground; the static SVG sky is shown only without WebGPU or after it fails. skelrilHead marks capable
+// browsers (html.skelril-webgpu) before the page renders, so they never see the SVG sky; the canvas shows a CSS
+// gradient until its first frame. Reduced motion stops the movement.
 const canvas = ref<HTMLCanvasElement>()
 const live = ref(false)
+const fallback = ref(false)
 let stop: (() => void) | null = null
 let unmounted = false
 
 onMounted(async () => {
-  if (!canvas.value || !('gpu' in navigator)) return
+  if (!canvas.value || !('gpu' in navigator)) {
+    fallback.value = true
+    return
+  }
   const { startSky } = await import('../sky')
   const animate = !matchMedia('(prefers-reduced-motion: reduce)').matches
-  const stopSky = await startSky(canvas.value, scene.value, { animate, onLost: () => { live.value = false } })
+  const lost = () => {
+    live.value = false
+    fallback.value = true
+  }
+  const stopSky = await startSky(canvas.value, scene.value, { animate, onLost: lost })
   if (unmounted) stopSky?.()
   else if (stopSky) {
     stop = stopSky
     live.value = true
-  }
+  } else fallback.value = true
 })
 onBeforeUnmount(() => {
   unmounted = true
@@ -34,7 +44,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="landscape" :class="{ 'landscape-live': live }" :style="{ '--landscape-moonlight': `url(#${moonlight})` }">
+  <div class="landscape" :class="{ 'landscape-live': live, 'landscape-static': fallback }" :style="{ '--landscape-moonlight': `url(#${moonlight})` }">
     <canvas ref="canvas" class="landscape-sky" aria-hidden="true" />
     <svg xmlns="http://www.w3.org/2000/svg" :viewBox="`0 0 ${width} ${height}`" preserveAspectRatio="xMidYMid slice"
       shape-rendering="crispEdges" aria-hidden="true">

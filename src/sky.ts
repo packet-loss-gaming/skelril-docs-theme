@@ -2,11 +2,13 @@
 // The landscape's sky as a WebGPU scene: a vertical gradient with the sun and block clouds drifting across it by day,
 // and the moon and twinkling block stars by night (dark mode: VitePress' html.dark class). It draws in the same scene
 // pixels as the SVG landscape (fitted like preserveAspectRatio="xMidYMid slice"), so the SVG foreground lines up on
-// top. Browsers without WebGPU keep the static SVG sky.
-import { CLOUD_MAX_WIDTH, cloudSpan, type LandscapeScene, type Rect } from './pixel.ts'
+// top. Browsers without WebGPU keep the static SVG sky. Time is wall-clock time modulo SKY_CYCLE_SECONDS, so every
+// page (and every reload) shows the sky at the same moment.
+import { CLOUD_MAX_WIDTH, cloudSpan, SKY_CYCLE_SECONDS, type LandscapeScene, type Rect } from './pixel.ts'
 
 const DAY = { top: '#4f9de6', horizon: '#bfe4ff' }
 const STAR_CSS_PX = 6
+const TWINKLES_PER_CYCLE = 50
 const NIGHT = { top: '#070b24', horizon: '#26346a', clouds: '#5c6a90' }  // clouds: multiplies their daytime colour
 
 // What an instance is: clouds are always drawn (tinted at night); the others belong to one time of day.
@@ -17,7 +19,7 @@ const SHADER = /* wgsl */ `
 struct Uniforms {
   size: vec2f,      // canvas size, device pixels
   scale: f32,       // device pixels per scene pixel
-  time: f32,        // seconds
+  time: f32,        // seconds into the cycle
   offset: vec2f,    // scene origin, device pixels
   horizon: f32,     // ground line, device pixels from the top
   span: f32,        // width of the strip clouds wrap around, scene pixels
@@ -74,7 +76,7 @@ struct Block {
   } else if (kind == 3u) {
     // Twinkle in three steps rather than smoothly, in keeping with the pixel art.
     // Dim stars fade towards the sky behind them.
-    let level = floor((sin(u.time * 1.3 + b.w) * 0.5 + 0.5) * 2.999) / 2.0;
+    let level = floor((sin(u.time * ${(2 * Math.PI * TWINKLES_PER_CYCLE / SKY_CYCLE_SECONDS).toFixed(6)} + b.w) * 0.5 + 0.5) * 2.999) / 2.0;
     let sky = mix(u.top.rgb, u.bottom.rgb, clamp(px.y / max(u.horizon, 1.0), 0.0, 1.0));
     rgb = mix(sky, rgb, 0.4 + 0.6 * level);
   }
@@ -124,30 +126,38 @@ export interface SkyOptions {
   onLost: () => void
 }
 
-// Starts drawing the sky into the canvas. Resolves to a stop function once the first frame is drawn, or to null when
-// WebGPU is unavailable or fails.
-export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene, options: SkyOptions):
-    Promise<(() => void) | null> {
-  const gpu = typeof navigator === 'undefined' ? undefined : navigator.gpu
-  if (!gpu) return null
-  let device: GPUDevice
-  try {
-    const adapter = await gpu.requestAdapter()
-    if (!adapter) return null
-    device = await adapter.requestDevice()
-  } catch {
-    return null
-  }
-  const context = canvas.getContext('webgpu')
-  if (!context) {
-    device.destroy()
-    return null
-  }
-  const format = gpu.getPreferredCanvasFormat()
-  context.configure({ device, format, alphaMode: 'opaque' })
-  // Validation errors (a shader or pipeline the browser rejects) do not throw; collect them through the first frame.
-  device.pushErrorScope('validation')
+interface Pipelines {
+  layout: GPUBindGroupLayout
+  sky: GPURenderPipeline
+  blocks: GPURenderPipeline
+}
 
+// One device (and one set of pipelines) for every landscape on the page and across page navigations; a new one is
+// requested only after a loss.
+let shared: Promise<{ device: GPUDevice; pipelines: Pipelines } | null> | null = null
+
+function sharedDevice(gpu: GPU): Promise<{ device: GPUDevice; pipelines: Pipelines } | null> {
+  shared ??= (async () => {
+    try {
+      const adapter = await gpu.requestAdapter()
+      if (!adapter) return null
+      const device = await adapter.requestDevice()
+      device.lost.then(() => { shared = null })
+      // Validation errors (a shader or pipeline the browser rejects) do not throw: check for them here.
+      device.pushErrorScope('validation')
+      const pipelines = createPipelines(device, gpu.getPreferredCanvasFormat())
+      const error = await device.popErrorScope()
+      if (error) throw error
+      return { device, pipelines }
+    } catch (error) {
+      console.warn('Skelril sky: WebGPU failed, keeping the static sky.', error)
+      return null
+    }
+  })()
+  return shared
+}
+
+function createPipelines(device: GPUDevice, format: GPUTextureFormat): Pipelines {
   const module = device.createShaderModule({ code: SHADER })
   const layout = device.createBindGroupLayout({
     entries: [{ binding: 0, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, buffer: {} }],
@@ -173,6 +183,22 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
     },
     fragment: { module, entryPoint: 'blockFragment', targets: [{ format }] },
   })
+  return { layout, sky, blocks }
+}
+
+// Starts drawing the sky into the canvas. Resolves to a stop function once the first frame is drawn, or to null when
+// WebGPU is unavailable or fails.
+export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene, options: SkyOptions):
+    Promise<(() => void) | null> {
+  const gpu = typeof navigator === 'undefined' ? undefined : navigator.gpu
+  if (!gpu) return null
+  const ready = await sharedDevice(gpu)
+  if (!ready) return null
+  const { device, pipelines: { layout, sky, blocks } } = ready
+  const context = canvas.getContext('webgpu')
+  if (!context) return null
+  context.configure({ device, format: gpu.getPreferredCanvasFormat(), alphaMode: 'opaque' })
+  device.pushErrorScope('validation')
 
   const data = instances(scene)
   const count = data.length / FLOATS_PER_INSTANCE
@@ -191,7 +217,9 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
   }
   setTimeOfDay()
 
-  const start = performance.now()
+  // Seconds into the cycle, from the wall clock (in double precision here: the shader only gets the remainder).
+  const frozen = Date.now()
+  const cycleTime = () => ((options.animate ? Date.now() : frozen) / 1000) % SKY_CYCLE_SECONDS
   let stopped = false
   function draw() {
     if (stopped || canvas.width === 0 || canvas.height === 0) return
@@ -201,7 +229,7 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
     uniforms[0] = w
     uniforms[1] = h
     uniforms[2] = scale
-    uniforms[3] = options.animate ? (performance.now() - start) / 1000 : 0
+    uniforms[3] = cycleTime()
     uniforms[4] = (w - scene.width * scale) / 2
     uniforms[5] = offsetY
     uniforms[6] = scene.groundTop * scale + offsetY
@@ -261,10 +289,10 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
   })
   watcher.observe(canvas)
 
-  device.lost.then((info) => {
+  device.lost.then(() => {
     if (stopped) return
     stop()
-    if (info.reason !== 'destroyed') options.onLost()
+    options.onLost()
   })
 
   function stop() {
@@ -274,7 +302,10 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
     resizer.disconnect()
     watcher.disconnect()
     themeWatcher.disconnect()
-    device.destroy()
+    // The device is shared: release only this sky's buffers and canvas.
+    instanceBuffer.destroy()
+    uniformBuffer.destroy()
+    context!.unconfigure()
   }
   try {
     const error = await device.popErrorScope()
@@ -283,6 +314,8 @@ export async function startSky(canvas: HTMLCanvasElement, scene: LandscapeScene,
   } catch (error) {
     console.warn('Skelril sky: WebGPU failed, keeping the static sky.', error)
     stop()
+    shared = null  // do not hand a failing device to the next landscape
+    device.destroy()
     return null
   }
   return stopped ? null : stop

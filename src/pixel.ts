@@ -117,6 +117,9 @@ export const CLOUD_MAX_WIDTH = 16
 export function cloudSpan(width: number): number {
   return width + CLOUD_MAX_WIDTH + 40
 }
+// The animated sky repeats every cycle: near clouds cross the strip twice per cycle, far clouds once, and the stars'
+// twinkle fits it too. The animation runs on wall-clock time modulo the cycle, so every page shows the same sky.
+export const SKY_CYCLE_SECONDS = 240
 
 const NIGHT_PALETTE: Record<string, string> = { a: '#0e1640', A: '#142057', m: '#f4efd8', c: '#cfc5a4', w: '#ffffff', p: '#9fb0e6' }
 const MOON = [
@@ -172,11 +175,11 @@ export function landscapeScene({ width = 68, height = 88, groundTop = 60, seed =
   const clouds: Cloud[] = []
   for (let i = 0; i < 3; i += 1) {
     const x = Math.floor((i + cloudRandom() * 0.6) * width / 3)
-    clouds.push({ x, y: 10 + Math.floor(cloudRandom() * (groundTop - 20)), width: SMALL_CLOUD[0].length, speed: 0.55, far: true, rects: far })
+    clouds.push({ x, y: 10 + Math.floor(cloudRandom() * (groundTop - 20)), width: SMALL_CLOUD[0].length, speed: cloudSpan(width) / SKY_CYCLE_SECONDS, far: true, rects: far })
   }
   const near = rects(ICONS.cloud)
   for (const [x, y] of [[4, 38], [44, 41], [2, 5]]) {
-    clouds.push({ x, y, width: ICONS.cloud[0].length, speed: 1.1, far: false, rects: near })
+    clouds.push({ x, y, width: ICONS.cloud[0].length, speed: 2 * cloudSpan(width) / SKY_CYCLE_SECONDS, far: false, rects: near })
   }
 
   const ground: Rect[] = []

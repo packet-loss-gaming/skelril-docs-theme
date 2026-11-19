@@ -10,7 +10,10 @@ Skelril's pixel-art VitePress theme, shared by Skelril's documentation sites, su
 
 `<Landscape />` is the pixel-art hero scene. Its sky is a WebGPU scene (`src/sky.ts`): a gradient with drifting block
 clouds by day, and the moon and twinkling block stars in dark mode (VitePress' `html.dark`), drawn behind the SVG
-foreground. Without WebGPU, or with a GPU error, the static SVG sky stays; `prefers-reduced-motion` stops the movement.
+foreground. The animation runs on wall-clock time, so it lines up across page loads and navigations. Without WebGPU, or
+with a GPU error, the static SVG sky is shown instead; `prefers-reduced-motion` stops the movement. Add `skelrilHead` to
+the site's `head` (`head: [...skelrilHead]`, from `vitepress-theme-skelril/node`) so WebGPU browsers never flash the
+SVG sky before the canvas is ready.
 
 `src/` ships as TypeScript for Vite to compile. Node will not strip types under `node_modules`, so `node/` is bundled
 to `dist/node.js` by the `prepare` script, which npm runs when it installs the git dependency. Sites need Node >= 22.18

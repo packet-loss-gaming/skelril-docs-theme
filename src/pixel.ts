@@ -63,8 +63,8 @@ export function iconSvg(name: string, px = 3, className = 'pixel-icon'): string 
     `height="${height * px}" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${rectsSvg(list)}</svg>`
 }
 
-// Integer hash of a scene position, in [0, 1). The sky shader has the same function (sky.ts), so the WebGPU ground and
-// the SVG one match pixel for pixel, and the scene does not reshuffle when it gets wider.
+// Integer hash of a scene position, in [0, 1). Placing things by hash keeps the scene from reshuffling when it gets
+// wider; the shaders (src/sky/) generate the ground with the same function.
 export function hash(x: number, y: number, seed: number): number {
   let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 1442695041)) | 0
   h = Math.imul(h ^ (h >>> 13), 1274126177)
@@ -84,7 +84,7 @@ export const GROUND = {
   grass: PALETTE.g, grassDark: PALETTE.G, dirt: PALETTE.d, dirtDark: PALETTE.D, stone: PALETTE.S, stoneLight: PALETTE.s,
   grassSpeckle: 0.35, dirtSpeckle: 0.12, stoneSpeckle: 0.25, stoneRows: 6,
 }
-// Night dims the foreground: each channel times `scale`, plus `add`.
+// Night dims the foreground: each channel times `scale`, plus `add`. The ground is drawn by the shaders (src/sky/).
 export const MOONLIGHT = { scale: [0.42, 0.48, 0.66], add: [0.02, 0.03, 0.09] }
 
 // A cloud: rects relative to its top-left corner, at x when the drift offset is 0.
@@ -112,8 +112,6 @@ export interface LandscapeScene {
   height: number
   groundTop: number
   seed: number
-  daySky: Rect[]       // the striped skies of the static (SVG) scene
-  nightSky: Rect[]
   sun: Rect[]
   moon: Rect[]
   stars: Star[]
@@ -130,7 +128,7 @@ const CLOUD_LAYERS = {
 }
 const TREE_SPACING = 26
 
-const NIGHT_PALETTE: Record<string, string> = { a: '#0e1640', A: '#142057', m: '#f4efd8', c: '#cfc5a4', w: '#ffffff', p: '#9fb0e6' }
+const NIGHT_PALETTE: Record<string, string> = { m: '#f4efd8', c: '#cfc5a4', w: '#ffffff', p: '#9fb0e6' }
 const MOON = [
   '..mmmmm..',
   '.mmmmmmm.',
@@ -146,18 +144,10 @@ const BRIGHT_STAR = ['.p.', 'pwp', '.p.']
 const STAR_COLOURS = ['#ffffff', '#d4ddff', '#fff1c2']
 const STAR_CELL = 8
 
-function stripes(left: number, width: number, groundTop: number, light: string, dark: string): Rect[] {
-  const out: Rect[] = []
-  for (let y = 0; y < groundTop; y += 1) out.push({ x: left, y, width, height: 1, fill: Math.floor(y / 6) % 2 ? dark : light })
-  return out
-}
-
-// Sky (day and night), sun, moon, stars, clouds and trees for a scene `width` scene pixels across, centred on x = 0.
+// Sun, moon, stars, clouds and trees for a scene `width` scene pixels across, centred on x = 0.
 // Everything is placed by position hashes, so a wider scene keeps what a narrower one had and adds more at the sides.
 export function landscapeScene({ width = 180, height = 88, groundTop = 60, seed = 7 }: LandscapeOptions = {}): LandscapeScene {
   const left = -width / 2, right = width / 2
-  const daySky = stripes(left, width, groundTop, PALETTE.b, PALETTE.B)
-  const nightSky = stripes(left, width, groundTop, NIGHT_PALETTE.a, NIGHT_PALETTE.A)
   const sun = rects(ICONS.sun, Math.floor(right) - 17, 1)
   const moonX = Math.floor(right) - 16
   const moon = rects(MOON, moonX, 2, NIGHT_PALETTE)
@@ -201,39 +191,5 @@ export function landscapeScene({ width = 180, height = 88, groundTop = 60, seed 
     const x = k * TREE_SPACING + Math.floor((hash(k, 78, seed) - 0.5) * 10) - Math.floor(treeWidth / 2)
     trees.push(...rects(ICONS.tree, x, groundTop - ICONS.tree.length))
   }
-  return { width, height, groundTop, seed, daySky, nightSky, sun, moon, stars, layers, clouds, trees }
-}
-
-// The colour of ground pixel (x, y), y >= groundTop. The sky shader mirrors this.
-export function groundColour(x: number, y: number, { height, groundTop, seed }: LandscapeScene): string {
-  const roll = hash(x, y, seed)
-  if (y === groundTop) return GROUND.grass
-  if (y === groundTop + 1) return roll < GROUND.grassSpeckle ? GROUND.grassDark : GROUND.grass
-  if (y < height - GROUND.stoneRows) return roll < GROUND.dirtSpeckle ? GROUND.dirtDark : GROUND.dirt
-  return roll < GROUND.stoneSpeckle ? GROUND.stoneLight : GROUND.stone
-}
-
-// The ground from x0 to x1 as rects (for the SVG): one rect per row in its base colour, plus the speckles.
-export function groundRects(scene: LandscapeScene, x0 = Math.floor(-scene.width / 2), x1 = Math.ceil(scene.width / 2)): Rect[] {
-  const out: Rect[] = []
-  for (let y = scene.groundTop; y < scene.height; y += 1) {
-    const base = y <= scene.groundTop + 1 ? GROUND.grass : y < scene.height - GROUND.stoneRows ? GROUND.dirt : GROUND.stone
-    out.push({ x: x0, y, width: x1 - x0, height: 1, fill: base })
-    for (let x = x0; x < x1; x += 1) {
-      const fill = groundColour(x, y, scene)
-      if (fill !== base) out.push({ x, y, width: 1, height: 1, fill })
-    }
-  }
-  return out
-}
-
-// A cloud's rects in scene coordinates at drift offset 0.
-export function cloudRects(cloud: Cloud): Rect[] {
-  return cloud.rects.map((r) => ({ ...r, x: r.x + cloud.x, y: r.y + cloud.y }))
-}
-
-// The whole static daytime scene.
-export function landscapeRects(options: LandscapeOptions = {}): Rect[] {
-  const scene = landscapeScene(options)
-  return [...scene.daySky, ...scene.sun, ...scene.clouds.flatMap(cloudRects), ...scene.trees, ...groundRects(scene)]
+  return { width, height, groundTop, seed, sun, moon, stars, layers, clouds, trees }
 }

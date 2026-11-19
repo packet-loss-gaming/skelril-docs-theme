@@ -211,13 +211,12 @@ body { background: var(--parchment); font-size: 17px; line-height: 1.55; }
   margin: 0; padding: 12px 22px 10px; border: 6px solid; border-color: #6b6b6b #1a1a1a #1a1a1a #6b6b6b;
   font-size: clamp(28px, 7vw, 52px); line-height: 1.1;
 }
-/* ---- the landscape: a WebGPU scene sized to the screen, or the static SVG scene without WebGPU ---- */
+/* ---- the landscape: a WebGL2 scene sized to the screen (src/sky/) ---- */
 .landscape { position: relative; width: 100%; height: 100%; overflow: hidden; container-type: size; }
-.landscape > canvas, .landscape > svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
-/* The SVG only without WebGPU (no html.skelril-webgpu from skelrilHead) or after it failed (.landscape-static). Until
-   the first frame, the canvas shows the sky and the ground bands as a gradient: --px is a scene pixel (the landscape's
-   height over its rows, rounded down like the WebGPU scene), --g the ground's height. */
-.landscape > canvas { visibility: hidden; background: linear-gradient(#4f9de6, #bfe4ff); }
+.landscape > canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+/* Until the first frame, and without WebGL2, the canvas shows the sky and the ground bands as a gradient:
+   --px is a scene pixel (the landscape's height over its rows, rounded down like the scene), --g the ground's height. */
+.landscape > canvas { background: linear-gradient(#4f9de6, #bfe4ff); }
 .dark .landscape > canvas { background: linear-gradient(#070b24, #26346a); }
 @supports (width: round(down, 10cqh, 1px)) {
   .landscape > canvas {
@@ -231,11 +230,3 @@ body { background: var(--parchment); font-size: 17px; line-height: 1.55; }
       #26346a 0, #070b24 100%);
   }
 }
-.landscape-live > canvas, .skelril-webgpu .landscape:not(.landscape-static) > canvas { visibility: visible; }
-.landscape-live > svg, .skelril-webgpu .landscape:not(.landscape-static) > svg { display: none; }
-.landscape-night { display: none; }
-.dark .landscape-night { display: inline; }
-.dark .landscape-day { display: none; }
-.dark .landscape-cloud rect { fill: #5c6a90; }
-.dark .landscape-cloud-far rect { fill: #3e4a73; }
-.dark .landscape-ground { filter: var(--landscape-moonlight); }
